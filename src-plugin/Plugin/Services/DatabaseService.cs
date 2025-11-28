@@ -32,7 +32,6 @@ public sealed partial class Plugin
 			{
 				await CreateTablesAsync();
 				IsEnabled = true;
-				Core.Logger.LogInformation("Database initialized successfully.");
 			}
 			catch (Exception ex)
 			{

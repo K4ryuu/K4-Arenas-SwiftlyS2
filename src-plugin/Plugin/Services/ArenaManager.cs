@@ -206,7 +206,6 @@ public sealed partial class Plugin
 							}
 						}
 
-						Core.Logger.LogInformation("[Warmup] Kicked bots from arena to make room for real player");
 						break;
 					}
 				}
@@ -222,7 +221,6 @@ public sealed partial class Plugin
 					{
 						arena.AddWarmupOpponent(player2);
 						RespawnPlayer(player2);
-						Core.Logger.LogInformation("[Warmup] Added {Player} as opponent", player2.Player.Controller?.PlayerName);
 					}
 				}
 			}
@@ -254,10 +252,6 @@ public sealed partial class Plugin
 
 				RespawnPlayer(player1);
 				RespawnPlayer(player2);
-
-				Core.Logger.LogInformation("[Warmup] Arena setup: {Player1} vs {Player2}",
-					player1.Player.Controller?.PlayerName,
-					player2.Player.Controller?.PlayerName);
 			}
 		}
 
