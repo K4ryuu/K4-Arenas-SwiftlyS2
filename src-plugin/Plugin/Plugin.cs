@@ -16,7 +16,7 @@ using SwiftlyS2.Shared.SchemaDefinitions;
 
 namespace K4Arenas;
 
-[PluginMetadata(Id = "k4.arenas", Version = "1.0.1", Name = "K4-Arenas", Author = "K4ryuu", Description = "Ladder type arena gamemode for Counter-Strike: 2 using SwiftlyS2 framework.")]
+[PluginMetadata(Id = "k4.arenas", Version = "1.0.2", Name = "K4-Arenas", Author = "K4ryuu", Description = "Ladder type arena gamemode for Counter-Strike: 2 using SwiftlyS2 framework.")]
 public sealed partial class Plugin(ISwiftlyCore core) : BasePlugin(core)
 {
 	/// <summary>
@@ -40,7 +40,6 @@ public sealed partial class Plugin(ISwiftlyCore core) : BasePlugin(core)
 
 		LoadConfiguration();
 
-		Weapons.InitializeCache();
 		RoundTypes.LoadFromFiles();
 
 		InitializeServices();
@@ -213,6 +212,8 @@ public sealed partial class Plugin(ISwiftlyCore core) : BasePlugin(core)
 
 		Core.Scheduler.DelayBySeconds(0.1f, () =>
 		{
+			Weapons.InitializeCache();
+
 			_arenaManager.Initialize();
 			_gameRules = GetGameRules();
 
