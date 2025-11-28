@@ -1,0 +1,69 @@
+{
+  "k4.general.prefix": "[silver][ [lime]K4-Arenas [silver]]",
+
+  "k4.general.arena": "ARENA",
+  "k4.general.afk": "AFK",
+  "k4.general.waiting": "WAITING",
+  "k4.general.no_opponent": "No opponent",
+  "k4.general.warmup": "WARMUP",
+  "k4.general.random": "Random",
+  "k4.general.unknown": "Unknown",
+
+  "k4.chat.queue_added": "[silver]You have been added to the queue. Position: [lime]{0}[silver].",
+  "k4.chat.queue_not_in_queue": "[silver]You are not in the queue.",
+  "k4.chat.queue_position": "[silver]Your queue position: [lime]{0}[silver]/[lime]{1}[silver].",
+  "k4.chat.queue_waiting_next_round": "[silver]You are waiting for the next round to start.",
+  "k4.chat.queue_afk": "[silver]You are currently AFK. Use [lime]!{0}[silver] to rejoin.",
+  "k4.chat.in_arena": "[silver]You are currently in arena [lime]{0}[silver].",
+
+  "k4.chat.arena_roundstart": "[silver]Arena [lime]{0}[silver] vs [lime]{1}[silver] - Round: [lime]{2}[silver].",
+  "k4.chat.arena_roundstart_html": "<div class=\"fontSize-l\" style=\"text-align: center; padding: 10px;\"><font color=\"#C0C0C0\">Arena</font><br><font color=\"#FFA500\" class=\"fontSize-xl\">{0}</font><br><font color=\"#C0C0C0\">Round Type</font><br><font color=\"#FFA500\" class=\"fontSize-xl\">{1}</font><br><font color=\"#C0C0C0\" class=\"fontSize-m\">{2}</font></div>",
+  "k4.chat.arena_commands": "[silver]Change preferences: [lime]!{0}[silver] and [lime]!{1}[silver].",
+  "k4.chat.arena_afk": "[silver]Go AFK: [lime]!{0}[silver].",
+
+  "k4.chat.afk_reminder": "[lightred]You are still AFK. Use [gold]!{0} [lightred]to disable.",
+  "k4.chat.afk_enabled": "[silver]AFK enabled. Use [gold]!{0} [silver]to disable.",
+  "k4.chat.afk_disabled": "[silver]AFK disabled.",
+
+  "k4.chat.team_switch_blocked": "[lightred]You cannot switch teams during an active match.",
+  "k4.chat.database_disabled": "[lightred]Database is not available. Preferences cannot be saved.",
+
+  "k4.chat.round_last_one": "[lightred]You must have at least one round type enabled.",
+  "k4.chat.round_enabled": "enabled",
+  "k4.chat.round_disabled": "disabled",
+  "k4.chat.round_toggled": "[silver]Round [lime]{0}[silver] is now [lime]{1}[silver].",
+
+  "k4.chat.weapon_set": "[silver]Weapon preference set to [lime]{0}[silver].",
+  "k4.chat.weapon_set_random": "[silver]Weapon preference for [lime]{0}[silver] set to random.",
+
+  "k4.menu.guns.title": "Weapon Preferences",
+  "k4.menu.guns.rifle": "Rifles",
+  "k4.menu.guns.sniper": "Snipers",
+  "k4.menu.guns.shotgun": "Shotguns",
+  "k4.menu.guns.smg": "SMGs",
+  "k4.menu.guns.lmg": "LMGs",
+  "k4.menu.guns.pistol": "Pistols",
+  "k4.menu.guns.random": "Random",
+
+  "k4.menu.rounds.title": "Round Preferences",
+
+  "k4.weapontype.rifle": "Rifle",
+  "k4.weapontype.sniper": "Sniper",
+  "k4.weapontype.shotgun": "Shotgun",
+  "k4.weapontype.smg": "SMG",
+  "k4.weapontype.lmg": "LMG",
+  "k4.weapontype.pistol": "Pistol",
+
+  "k4.rounds.rifle": "Rifle",
+  "k4.rounds.pistol": "Pistol",
+  "k4.rounds.scout": "Scout",
+  "k4.rounds.sniper": "Sniper",
+  "k4.rounds.shotgun": "Shotgun",
+  "k4.rounds.smg": "SMG",
+  "k4.rounds.lmg": "LMG",
+  "k4.rounds.awp": "AWP",
+  "k4.rounds.deagle": "Deagle",
+  "k4.rounds.knife": "Knife",
+  "k4.rounds.2vs2": "2vs2",
+  "k4.rounds.3vs3": "3vs3"
+}

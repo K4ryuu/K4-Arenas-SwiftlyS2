@@ -1,0 +1,26 @@
+{
+  // Translation key for the round name
+  "name": "k4.rounds.shotgun",
+
+  // Team size (1 = 1v1, 2 = 2v2, etc.)
+  "teamSize": 1,
+
+  // Whether this round type is enabled by default for new players
+  "enabledByDefault": true,
+
+  // Weapons - null means no fixed weapon
+  "primaryWeapon": null,
+  "secondaryWeapon": null,
+
+  // Use player's preferred weapons from their preferences
+  "usePreferredPrimary": true,
+  "usePreferredSecondary": true,
+
+  // Primary weapon preference type: RIFLE, SNIPER_RIFLE, SHOTGUN, SMG, LMG, PISTOL
+  "primaryPreference": "SHOTGUN",
+
+  // Equipment
+  "armor": true,
+  "helmet": true,
+  "health": 100
+}
