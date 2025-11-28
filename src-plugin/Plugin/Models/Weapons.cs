@@ -25,14 +25,11 @@ public sealed partial class Plugin
 				if (type == CSWeaponType.WEAPONTYPE_UNKNOWN)
 					continue;
 
-				Core.Logger.LogInformation($"Weapons in enum: {Enum.GetValues<ItemDefinitionIndex>().Length}");
-
 				var weapons = Enum.GetValues<ItemDefinitionIndex>()
 					.Where(w => Core.Helpers.GetWeaponCSDataFromKey(w)?.WeaponType == type)
 					.ToList();
 
 				_weaponCache[type] = weapons;
-				Core.Logger.LogInformation($"Cached {weapons.Count} weapons for type {type}");
 			}
 
 			_allPrimariesCache = [.. Enum.GetValues<ItemDefinitionIndex>()

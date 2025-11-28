@@ -46,10 +46,7 @@ public sealed partial class Plugin
 				{
 					var config = LoadRoundFile(file);
 					if (config != null)
-					{
 						configs.Add(config);
-						Core.Logger.LogDebug("Loaded round config: {Name} from {File}", config.Name, Path.GetFileName(file));
-					}
 				}
 				catch (Exception ex)
 				{
