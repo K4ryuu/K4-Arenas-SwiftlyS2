@@ -5,7 +5,7 @@
 ![GitHub issues](https://img.shields.io/github/issues/K4ryuu/K4-Arenas-SwiftlyS2?style=for-the-badge)
 ![GitHub](https://img.shields.io/github/license/K4ryuu/K4-Arenas-SwiftlyS2?style=for-the-badge)
 ![GitHub all releases](https://img.shields.io/github/downloads/K4ryuu/K4-Arenas-SwiftlyS2/total?style=for-the-badge)
-[![Discord](https://img.shields.io/badge/Discord-Join%20Server-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/Dwq8hncnxX)
+[![Discord](https://img.shields.io/badge/Discord-Join%20Server-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://dsc.gg/k4-fanbase)
 
 <!-- PROJECT LOGO -->
 <br />
