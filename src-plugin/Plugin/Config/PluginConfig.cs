@@ -29,7 +29,7 @@ public sealed partial class Plugin
 	public sealed class CommandSettings
 	{
 		/// <summary>Commands to open gun menu</summary>
-		public List<string> GunsCommands { get; set; } = ["guns", "gunpref", "weaponpref"];
+		public List<string> GunsCommands { get; set; } = ["guns", "gunpref", "weaponpref", "weps", "weapons"];
 
 		/// <summary>Commands to open rounds menu</summary>
 		public List<string> RoundsCommands { get; set; } = ["rounds", "roundpref"];

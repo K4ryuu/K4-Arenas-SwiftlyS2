@@ -1,4 +1,5 @@
-using Dapper;
+using Dommel;
+using K4Arenas.Database.Migrations;
 using Microsoft.Extensions.Logging;
 using SwiftlyS2.Shared.Helpers;
 using SwiftlyS2.Shared.SchemaDefinitions;
@@ -8,7 +9,7 @@ namespace K4Arenas;
 public sealed partial class Plugin
 {
 	/// <summary>
-	/// Handles player preference persistence in MySQL.
+	/// Handles player preference persistence in database (MySQL, PostgreSQL, SQLite)
 	/// Only stores non-default values - if preference matches default, it's deleted.
 	/// </summary>
 	public sealed class DatabaseService
@@ -25,48 +26,21 @@ public sealed partial class Plugin
 			_purgeDays = purgeDays;
 		}
 
-		/// <summary>Sets up DB connection and creates tables</summary>
+		/// <summary>Sets up DB connection and runs migrations</summary>
 		public async Task InitializeAsync()
 		{
 			try
 			{
-				await CreateTablesAsync();
+				using var connection = Core.Database.GetConnection(_connectionName);
+				MigrationRunner.RunMigrations(connection);
 				IsEnabled = true;
+				Core.Logger.LogInformation("Database initialized with migrations.");
 			}
 			catch (Exception ex)
 			{
 				Core.Logger.LogError(ex, "Failed to initialize database. Player preferences will not be saved.");
 				IsEnabled = false;
 			}
-		}
-
-		private async Task CreateTablesAsync()
-		{
-			const string sql = @"
-				CREATE TABLE IF NOT EXISTS `k4_arenas_players` (
-					`steamid64` BIGINT UNSIGNED NOT NULL PRIMARY KEY,
-					`lastseen` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-				);
-
-				CREATE TABLE IF NOT EXISTS `k4_arenas_weapons` (
-					`steamid64` BIGINT UNSIGNED NOT NULL,
-					`weapon_type` VARCHAR(32) NOT NULL,
-					`weapon_id` INT NOT NULL,
-					PRIMARY KEY (`steamid64`, `weapon_type`),
-					FOREIGN KEY (`steamid64`) REFERENCES `k4_arenas_players`(`steamid64`) ON DELETE CASCADE
-				);
-
-				CREATE TABLE IF NOT EXISTS `k4_arenas_rounds` (
-					`steamid64` BIGINT UNSIGNED NOT NULL,
-					`round_name` VARCHAR(64) NOT NULL,
-					`enabled` BOOLEAN NOT NULL,
-					PRIMARY KEY (`steamid64`, `round_name`),
-					FOREIGN KEY (`steamid64`) REFERENCES `k4_arenas_players`(`steamid64`) ON DELETE CASCADE
-				);";
-
-			using var connection = Core.Database.GetConnection(_connectionName);
-			connection.Open();
-			await connection.ExecuteAsync(sql);
 		}
 
 		/// <summary>
@@ -77,28 +51,35 @@ public sealed partial class Plugin
 			if (!IsEnabled)
 				return false;
 
-			var steamId = player.SteamId;
+			var steamId = (long)player.SteamId;
 
 			try
 			{
 				using var connection = Core.Database.GetConnection(_connectionName);
 				connection.Open();
 
-				// ensure player record exists
-				const string upsertPlayer = @"
-					INSERT INTO `k4_arenas_players` (`steamid64`)
-					VALUES (@SteamId)
-					ON DUPLICATE KEY UPDATE `lastseen` = CURRENT_TIMESTAMP;";
+				// Check if player exists
+				var dbPlayer = await connection.FirstOrDefaultAsync<DbPlayer>(p => p.SteamId64 == steamId);
 
-				await connection.ExecuteAsync(upsertPlayer, new { SteamId = steamId });
+				if (dbPlayer == null)
+				{
+					// Create new player record
+					dbPlayer = new DbPlayer
+					{
+						SteamId64 = steamId,
+						LastSeen = DateTime.UtcNow
+					};
+					await connection.InsertAsync(dbPlayer);
+				}
+				else
+				{
+					// Update last seen
+					dbPlayer.LastSeen = DateTime.UtcNow;
+					await connection.UpdateAsync(dbPlayer);
+				}
 
-				// load weapon prefs
-				const string selectWeapons = @"
-					SELECT `weapon_type`, `weapon_id`
-					FROM `k4_arenas_weapons`
-					WHERE `steamid64` = @SteamId;";
-
-				var weapons = await connection.QueryAsync<WeaponDto>(selectWeapons, new { SteamId = steamId });
+				// Load weapon prefs
+				var weapons = await connection.SelectAsync<DbWeaponPreference>(w => w.SteamId64 == steamId);
 
 				foreach (var weapon in weapons)
 				{
@@ -107,16 +88,11 @@ public sealed partial class Plugin
 						player.SetWeaponPreference(weaponType.Value, (ItemDefinitionIndex)weapon.WeaponId);
 				}
 
-				// load round prefs and clean up deleted rounds
-				const string selectRounds = @"
-					SELECT `round_name`, `enabled`
-					FROM `k4_arenas_rounds`
-					WHERE `steamid64` = @SteamId;";
+				// Load round prefs and clean up deleted rounds
+				var rounds = await connection.SelectAsync<DbRoundPreference>(r => r.SteamId64 == steamId);
+				var roundsToDelete = new List<int>();
 
-				var rounds = await connection.QueryAsync<RoundDto>(selectRounds, new { SteamId = steamId });
-				var roundsToDelete = new List<string>();
-
-				// start with defaults
+				// Start with defaults
 				player.EnabledRoundTypes.Clear();
 				foreach (var roundType in RoundTypes.All)
 				{
@@ -124,14 +100,14 @@ public sealed partial class Plugin
 						player.EnabledRoundTypes.Add(roundType.Id);
 				}
 
-				// apply stored prefs
+				// Apply stored prefs
 				foreach (var round in rounds)
 				{
 					var roundType = RoundTypes.GetByName(round.RoundName);
 
 					if (roundType == null)
 					{
-						roundsToDelete.Add(round.RoundName);
+						roundsToDelete.Add(round.Id);
 						continue;
 					}
 
@@ -141,18 +117,19 @@ public sealed partial class Plugin
 						player.EnabledRoundTypes.Remove(roundType.Id);
 				}
 
-				// clean up deleted rounds
+				// Clean up deleted rounds
 				if (roundsToDelete.Count > 0)
 				{
-					const string deleteRounds = @"
-						DELETE FROM `k4_arenas_rounds`
-						WHERE `steamid64` = @SteamId AND `round_name` IN @RoundNames;";
-
-					await connection.ExecuteAsync(deleteRounds, new { SteamId = steamId, RoundNames = roundsToDelete });
+					foreach (var id in roundsToDelete)
+					{
+						var toDelete = await connection.GetAsync<DbRoundPreference>(id);
+						if (toDelete != null)
+							await connection.DeleteAsync(toDelete);
+					}
 					Core.Logger.LogDebug("Cleaned up {Count} deleted round preferences for {SteamId}", roundsToDelete.Count, steamId);
 				}
 
-				// ensure at least one round type enabled
+				// Ensure at least one round type enabled
 				if (player.EnabledRoundTypes.Count == 0)
 				{
 					foreach (var rt in RoundTypes.All)
@@ -181,7 +158,7 @@ public sealed partial class Plugin
 			if (!IsEnabled || !player.IsLoaded)
 				return;
 
-			var steamId = player.SteamId;
+			var steamId = (long)player.SteamId;
 
 			try
 			{
@@ -192,27 +169,34 @@ public sealed partial class Plugin
 				if (weaponTypeStr == null)
 					return;
 
+				// Find existing preference
+				var existing = (await connection.SelectAsync<DbWeaponPreference>(w =>
+					w.SteamId64 == steamId && w.WeaponType == weaponTypeStr)).FirstOrDefault();
+
 				if (weapon.HasValue)
 				{
-					const string upsert = @"
-						INSERT INTO `k4_arenas_weapons` (`steamid64`, `weapon_type`, `weapon_id`)
-						VALUES (@SteamId, @WeaponType, @WeaponId)
-						ON DUPLICATE KEY UPDATE `weapon_id` = @WeaponId;";
-
-					await connection.ExecuteAsync(upsert, new
+					if (existing != null)
 					{
-						SteamId = steamId,
-						WeaponType = weaponTypeStr,
-						WeaponId = (int)weapon.Value
-					});
+						// Update existing
+						existing.WeaponId = (int)weapon.Value;
+						await connection.UpdateAsync(existing);
+					}
+					else
+					{
+						// Insert new
+						var newPref = new DbWeaponPreference
+						{
+							SteamId64 = steamId,
+							WeaponType = weaponTypeStr,
+							WeaponId = (int)weapon.Value
+						};
+						await connection.InsertAsync(newPref);
+					}
 				}
-				else
+				else if (existing != null)
 				{
-					const string delete = @"
-						DELETE FROM `k4_arenas_weapons`
-						WHERE `steamid64` = @SteamId AND `weapon_type` = @WeaponType;";
-
-					await connection.ExecuteAsync(delete, new { SteamId = steamId, WeaponType = weaponTypeStr });
+					// Delete if set to random (default)
+					await connection.DeleteAsync(existing);
 				}
 			}
 			catch (Exception ex)
@@ -229,35 +213,44 @@ public sealed partial class Plugin
 			if (!IsEnabled || !player.IsLoaded)
 				return;
 
-			var steamId = player.SteamId;
+			var steamId = (long)player.SteamId;
 
 			try
 			{
 				using var connection = Core.Database.GetConnection(_connectionName);
 				connection.Open();
 
+				// Find existing preference
+				var existing = (await connection.SelectAsync<DbRoundPreference>(r =>
+					r.SteamId64 == steamId && r.RoundName == roundType.Name)).FirstOrDefault();
+
 				if (enabled == roundType.EnabledByDefault)
 				{
-					// matches default, delete from DB
-					const string delete = @"
-						DELETE FROM `k4_arenas_rounds`
-						WHERE `steamid64` = @SteamId AND `round_name` = @RoundName;";
-
-					await connection.ExecuteAsync(delete, new { SteamId = steamId, RoundName = roundType.Name });
+					// Matches default, delete from DB
+					if (existing != null)
+					{
+						await connection.DeleteAsync(existing);
+					}
 				}
 				else
 				{
-					const string upsert = @"
-						INSERT INTO `k4_arenas_rounds` (`steamid64`, `round_name`, `enabled`)
-						VALUES (@SteamId, @RoundName, @Enabled)
-						ON DUPLICATE KEY UPDATE `enabled` = @Enabled;";
-
-					await connection.ExecuteAsync(upsert, new
+					if (existing != null)
 					{
-						SteamId = steamId,
-						RoundName = roundType.Name,
-						Enabled = enabled
-					});
+						// Update existing
+						existing.Enabled = enabled;
+						await connection.UpdateAsync(existing);
+					}
+					else
+					{
+						// Insert new
+						var newPref = new DbRoundPreference
+						{
+							SteamId64 = steamId,
+							RoundName = roundType.Name,
+							Enabled = enabled
+						};
+						await connection.InsertAsync(newPref);
+					}
 				}
 			}
 			catch (Exception ex)
@@ -267,7 +260,7 @@ public sealed partial class Plugin
 		}
 
 		/// <summary>
-		/// Removes old player records (cascades to weapons and rounds)
+		/// Removes old player records and their associated preferences
 		/// </summary>
 		public async Task PurgeOldRecordsAsync()
 		{
@@ -276,14 +269,29 @@ public sealed partial class Plugin
 
 			try
 			{
-				const string sql = @"
-					DELETE FROM `k4_arenas_players`
-					WHERE `lastseen` < DATE_SUB(NOW(), INTERVAL @PurgeDays DAY);";
-
 				using var connection = Core.Database.GetConnection(_connectionName);
 				connection.Open();
 
-				var deletedCount = await connection.ExecuteAsync(sql, new { PurgeDays = _purgeDays });
+				var cutoffDate = DateTime.UtcNow.AddDays(-_purgeDays);
+				var oldPlayers = await connection.SelectAsync<DbPlayer>(p => p.LastSeen < cutoffDate);
+				var deletedCount = 0;
+
+				foreach (var player in oldPlayers)
+				{
+					// Delete associated weapon preferences
+					var weapons = await connection.SelectAsync<DbWeaponPreference>(w => w.SteamId64 == player.SteamId64);
+					foreach (var weapon in weapons)
+						await connection.DeleteAsync(weapon);
+
+					// Delete associated round preferences
+					var rounds = await connection.SelectAsync<DbRoundPreference>(r => r.SteamId64 == player.SteamId64);
+					foreach (var round in rounds)
+						await connection.DeleteAsync(round);
+
+					// Delete player
+					await connection.DeleteAsync(player);
+					deletedCount++;
+				}
 
 				if (deletedCount > 0)
 					Core.Logger.LogInformation("Purged {Count} old player records from database.", deletedCount);
@@ -315,17 +323,5 @@ public sealed partial class Plugin
 			"pistol" => CSWeaponType.WEAPONTYPE_PISTOL,
 			_ => null
 		};
-
-		private sealed class WeaponDto
-		{
-			public string WeaponType { get; init; } = "";
-			public int WeaponId { get; init; }
-		}
-
-		private sealed class RoundDto
-		{
-			public string RoundName { get; init; } = "";
-			public bool Enabled { get; init; }
-		}
 	}
 }
