@@ -10,6 +10,7 @@ namespace K4Arenas;
 public sealed class DbPlayer
 {
 	[Key]
+	[DatabaseGenerated(DatabaseGeneratedOption.None)]
 	[Column("steamid64")]
 	public long SteamId64 { get; set; }
 
