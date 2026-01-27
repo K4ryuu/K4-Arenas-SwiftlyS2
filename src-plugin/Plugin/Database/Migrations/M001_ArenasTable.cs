@@ -16,7 +16,7 @@ public class M001_ArenasTable : Migration
 		{
 			Create.Table("k4_arenas_players")
 				.WithColumn("steamid64").AsInt64().NotNullable().PrimaryKey()
-				.WithColumn("lastseen").AsDateTime().NotNullable().WithDefault(SystemMethods.CurrentUTCDateTime);
+				.WithColumn("lastseen").AsDateTime().NotNullable().WithDefault(SystemMethods.CurrentDateTime);
 		}
 
 		// Weapons preferences table

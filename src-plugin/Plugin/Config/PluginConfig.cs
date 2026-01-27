@@ -8,7 +8,7 @@ public sealed partial class Plugin
 	public sealed class PluginConfig
 	{
 		/// <summary>DB connection name (from SwiftlyS2's database.jsonc)</summary>
-		public string DatabaseConnection { get; set; } = "host";
+		public string DatabaseConnection { get; set; } = "default";
 
 		/// <summary>Days to keep inactive player records (0 = forever)</summary>
 		public int DatabasePurgeDays { get; set; } = 30;
