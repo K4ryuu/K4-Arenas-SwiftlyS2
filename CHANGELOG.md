@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.1.3] - 2026-02-11
+
+### Fixed
+
+- **Real players priority over bots**: Fixed issue where real players would wait in queue while bots were playing in arenas
+  - Added `ShouldTerminateForWaitingPlayers()` method to prioritize real players over bots
+  - Round now terminates when waiting real players exist AND:
+    - No real players in arenas (only bots playing), OR
+    - Only 1 real player in arenas (needs real opponent instead of bot)
+  - Fixes bug where: bots playing in arena → real player joins → stuck waiting instead of replacing bots
+  - Real players no longer have to wait for round end when bots occupy arena slots
+
+- **CRITICAL**: Fixed configuration binding bug in `LoadConfiguration()` method
+  - Changed `.BindConfiguration(ConfigFileName)` to `.BindConfiguration(ConfigSection)`
+  - This bug caused all config values to use hardcoded defaults instead of reading from `config.json`
+  - **Impact**: Plugin configuration was completely non-functional - arena settings, round types, weapon preferences, command settings, VIP settings, and compatibility options were all ignored
+
 ## [v1.1.2]
 
 ### Changed
