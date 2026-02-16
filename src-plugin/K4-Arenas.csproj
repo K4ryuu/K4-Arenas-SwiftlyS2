@@ -10,7 +10,8 @@
     <TieredCompilation>true</TieredCompilation>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <AssemblyName>$(MSBuildThisFileName)</AssemblyName>
-    <OutputPath>$(MSBuildThisFileDirectory)build/</OutputPath>
+    <OutputPath>$(MSBuildThisFileDirectory)build/$(TargetFramework)/</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <PublishDir>$(OutputPath)publish/$(MSBuildThisFileName)</PublishDir>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
@@ -47,7 +48,11 @@
   </ItemGroup>
 
   <Target Name="CopySharedApiToExports" AfterTargets="Build">
-    <Copy SourceFiles="$(MSBuildThisFileDirectory)../src-shared/build/$(TargetFramework)/K4-ArenaSharedApi.dll" DestinationFolder="$(MSBuildThisFileDirectory)resources/exports/" />
+    <PropertyGroup>
+      <ExportsPath>$(OutputPath)resources\exports\</ExportsPath>
+    </PropertyGroup>
+    <MakeDir Directories="$(ExportsPath)" Condition="!Exists('$(ExportsPath)')" />
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)../src-shared/build/$(TargetFramework)/K4-ArenaSharedApi.dll" DestinationFolder="$(ExportsPath)" SkipUnchangedFiles="true" />
   </Target>
 
   <Target Name="CreateZip" AfterTargets="Publish">
