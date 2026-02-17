@@ -55,6 +55,14 @@
     <Copy SourceFiles="$(MSBuildThisFileDirectory)../src-shared/build/$(TargetFramework)/K4-ArenaSharedApi.dll" DestinationFolder="$(ExportsPath)" SkipUnchangedFiles="true" />
   </Target>
 
+  <Target Name="CopySharedApiToPublishExports" AfterTargets="Publish" BeforeTargets="CreateZip">
+    <PropertyGroup>
+      <PublishExportsPath>$(PublishDir)resources\exports\</PublishExportsPath>
+    </PropertyGroup>
+    <MakeDir Directories="$(PublishExportsPath)" Condition="!Exists('$(PublishExportsPath)')" />
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)../src-shared/build/$(TargetFramework)/K4-ArenaSharedApi.dll" DestinationFolder="$(PublishExportsPath)" SkipUnchangedFiles="true" />
+  </Target>
+
   <Target Name="CreateZip" AfterTargets="Publish">
     <ZipDirectory SourceDirectory="$(PublishDir)../" DestinationFile="$(OutputPath)../$(AssemblyName).zip" Overwrite="true" />
   </Target>
