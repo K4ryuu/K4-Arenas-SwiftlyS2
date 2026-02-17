@@ -752,17 +752,13 @@ public sealed partial class Plugin(ISwiftlyCore core) : BasePlugin(core)
 			? localizer["k4.menu.guns.selected", localizer["k4.menu.guns.random"]]
 			: localizer["k4.menu.guns.random"];
 		var randomButton = new ButtonMenuOption(randomText);
-		randomButton.Click += (sender, args) =>
+		randomButton.Click += async (sender, args) =>
 		{
-			Core.Scheduler.NextWorldUpdate(() =>
-			{
-				var clickLocalizer = Core.Translation.GetPlayerLocalizer(arenaPlayer.Player);
-				arenaPlayer.SetWeaponPreference(weaponType, null);
-				Task.Run(() => _databaseService.SaveWeaponPreferenceAsync(arenaPlayer, weaponType, null));
-				arenaPlayer.Player.SendChat($"{clickLocalizer["k4.general.prefix"]} {clickLocalizer["k4.chat.weapon_set_random", clickLocalizer[Weapons.GetTranslationKey(weaponType)]]}");
-				ShowWeaponSelectionMenu(arenaPlayer, weaponType);
-			});
-			return ValueTask.CompletedTask;
+			var clickLocalizer = Core.Translation.GetPlayerLocalizer(arenaPlayer.Player);
+			arenaPlayer.SetWeaponPreference(weaponType, null);
+			_ = _databaseService.SaveWeaponPreferenceAsync(arenaPlayer, weaponType, null);
+			await arenaPlayer.Player.SendChatAsync($"{clickLocalizer["k4.general.prefix"]} {clickLocalizer["k4.chat.weapon_set_random", clickLocalizer[Weapons.GetTranslationKey(weaponType)]]}");
+			ShowWeaponSelectionMenu(arenaPlayer, weaponType);
 		};
 		menuBuilder.AddOption(randomButton);
 
@@ -783,17 +779,13 @@ public sealed partial class Plugin(ISwiftlyCore core) : BasePlugin(core)
 			var capturedWeapon = weapon;
 			var capturedDisplayName = displayName;
 			var weaponButton = new ButtonMenuOption(formattedName);
-			weaponButton.Click += (sender, args) =>
+			weaponButton.Click += async (sender, args) =>
 			{
-				Core.Scheduler.NextWorldUpdate(() =>
-				{
-					var clickLocalizer = Core.Translation.GetPlayerLocalizer(arenaPlayer.Player);
-					arenaPlayer.SetWeaponPreference(weaponType, capturedWeapon);
-					Task.Run(() => _databaseService.SaveWeaponPreferenceAsync(arenaPlayer, weaponType, capturedWeapon));
-					arenaPlayer.Player.SendChat($"{clickLocalizer["k4.general.prefix"]} {clickLocalizer["k4.chat.weapon_set", capturedDisplayName]}");
-					ShowWeaponSelectionMenu(arenaPlayer, weaponType);
-				});
-				return ValueTask.CompletedTask;
+				var clickLocalizer = Core.Translation.GetPlayerLocalizer(arenaPlayer.Player);
+				arenaPlayer.SetWeaponPreference(weaponType, capturedWeapon);
+				_ = _databaseService.SaveWeaponPreferenceAsync(arenaPlayer, weaponType, capturedWeapon);
+				await arenaPlayer.Player.SendChatAsync($"{clickLocalizer["k4.general.prefix"]} {clickLocalizer["k4.chat.weapon_set", capturedDisplayName]}");
+				ShowWeaponSelectionMenu(arenaPlayer, weaponType);
 			};
 			menuBuilder.AddOption(weaponButton);
 		}
@@ -819,27 +811,24 @@ public sealed partial class Plugin(ISwiftlyCore core) : BasePlugin(core)
 			var capturedRoundType = roundType;
 
 			var toggle = new ToggleMenuOption($"{localizer[roundType.Name]}", isEnabled);
-			toggle.ValueChanged += (sender, e) =>
+			toggle.ValueChanged += async (sender, e) =>
 			{
-				Core.Scheduler.NextWorldUpdate(() =>
-				{
-					var clickLocalizer = Core.Translation.GetPlayerLocalizer(arenaPlayer.Player);
-					var result = arenaPlayer.ToggleRoundType(capturedRoundType);
+				var clickLocalizer = Core.Translation.GetPlayerLocalizer(arenaPlayer.Player);
+				var result = arenaPlayer.ToggleRoundType(capturedRoundType);
 
-					if (result == null)
-					{
-						e.Player.SendChat($"{clickLocalizer["k4.general.prefix"]} {clickLocalizer["k4.chat.round_last_one"]}");
-						ShowRoundPreferencesMenu(arenaPlayer);
-					}
-					else
-					{
-						Task.Run(() => _databaseService.SaveRoundPreferenceAsync(arenaPlayer, capturedRoundType, result.Value));
-						var status = result.Value
-							? clickLocalizer["k4.chat.round_enabled"]
-							: clickLocalizer["k4.chat.round_disabled"];
-						e.Player.SendChat($"{clickLocalizer["k4.general.prefix"]} {clickLocalizer["k4.chat.round_toggled", clickLocalizer[capturedRoundType.Name], status]}");
-					}
-				});
+				if (result == null)
+				{
+					await e.Player.SendChatAsync($"{clickLocalizer["k4.general.prefix"]} {clickLocalizer["k4.chat.round_last_one"]}");
+					ShowRoundPreferencesMenu(arenaPlayer);
+				}
+				else
+				{
+					_ = _databaseService.SaveRoundPreferenceAsync(arenaPlayer, capturedRoundType, result.Value);
+					var status = result.Value
+						? clickLocalizer["k4.chat.round_enabled"]
+						: clickLocalizer["k4.chat.round_disabled"];
+					await e.Player.SendChatAsync($"{clickLocalizer["k4.general.prefix"]} {clickLocalizer["k4.chat.round_toggled", clickLocalizer[capturedRoundType.Name], status]}");
+				}
 			};
 			menuBuilder.AddOption(toggle);
 		}
