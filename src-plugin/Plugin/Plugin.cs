@@ -752,15 +752,13 @@ public sealed partial class Plugin(ISwiftlyCore core) : BasePlugin(core)
 			? localizer["k4.menu.guns.selected", localizer["k4.menu.guns.random"]]
 			: localizer["k4.menu.guns.random"];
 		var randomButton = new ButtonMenuOption(randomText);
-		randomButton.Click += (sender, args) =>
+		randomButton.Click += async (sender, args) =>
 		{
 			var clickLocalizer = Core.Translation.GetPlayerLocalizer(arenaPlayer.Player);
 			arenaPlayer.SetWeaponPreference(weaponType, null);
-			Task.Run(() => _databaseService.SaveWeaponPreferenceAsync(arenaPlayer, weaponType, null));
-			arenaPlayer.Player.SendChat($"{clickLocalizer["k4.general.prefix"]} {clickLocalizer["k4.chat.weapon_set_random", clickLocalizer[Weapons.GetTranslationKey(weaponType)]]}");
-			// Refresh menu to update highlighting
+			_ = _databaseService.SaveWeaponPreferenceAsync(arenaPlayer, weaponType, null);
+			await arenaPlayer.Player.SendChatAsync($"{clickLocalizer["k4.general.prefix"]} {clickLocalizer["k4.chat.weapon_set_random", clickLocalizer[Weapons.GetTranslationKey(weaponType)]]}");
 			ShowWeaponSelectionMenu(arenaPlayer, weaponType);
-			return ValueTask.CompletedTask;
 		};
 		menuBuilder.AddOption(randomButton);
 
@@ -781,15 +779,13 @@ public sealed partial class Plugin(ISwiftlyCore core) : BasePlugin(core)
 			var capturedWeapon = weapon;
 			var capturedDisplayName = displayName;
 			var weaponButton = new ButtonMenuOption(formattedName);
-			weaponButton.Click += (sender, args) =>
+			weaponButton.Click += async (sender, args) =>
 			{
 				var clickLocalizer = Core.Translation.GetPlayerLocalizer(arenaPlayer.Player);
 				arenaPlayer.SetWeaponPreference(weaponType, capturedWeapon);
-				Task.Run(() => _databaseService.SaveWeaponPreferenceAsync(arenaPlayer, weaponType, capturedWeapon));
-				arenaPlayer.Player.SendChat($"{clickLocalizer["k4.general.prefix"]} {clickLocalizer["k4.chat.weapon_set", capturedDisplayName]}");
-				// Refresh menu to update highlighting
+				_ = _databaseService.SaveWeaponPreferenceAsync(arenaPlayer, weaponType, capturedWeapon);
+				await arenaPlayer.Player.SendChatAsync($"{clickLocalizer["k4.general.prefix"]} {clickLocalizer["k4.chat.weapon_set", capturedDisplayName]}");
 				ShowWeaponSelectionMenu(arenaPlayer, weaponType);
-				return ValueTask.CompletedTask;
 			};
 			menuBuilder.AddOption(weaponButton);
 		}
@@ -815,26 +811,23 @@ public sealed partial class Plugin(ISwiftlyCore core) : BasePlugin(core)
 			var capturedRoundType = roundType;
 
 			var toggle = new ToggleMenuOption($"{localizer[roundType.Name]}", isEnabled);
-			toggle.ValueChanged += (sender, e) =>
+			toggle.ValueChanged += async (sender, e) =>
 			{
 				var clickLocalizer = Core.Translation.GetPlayerLocalizer(arenaPlayer.Player);
 				var result = arenaPlayer.ToggleRoundType(capturedRoundType);
 
 				if (result == null)
 				{
-					// Can't disable the last one - revert the toggle
-					e.Player.SendChat($"{clickLocalizer["k4.general.prefix"]} {clickLocalizer["k4.chat.round_last_one"]}");
-					// Refresh menu to reset toggle state
+					await e.Player.SendChatAsync($"{clickLocalizer["k4.general.prefix"]} {clickLocalizer["k4.chat.round_last_one"]}");
 					ShowRoundPreferencesMenu(arenaPlayer);
 				}
 				else
 				{
-					// Save only this specific round preference (stores only if different from default)
-					Task.Run(() => _databaseService.SaveRoundPreferenceAsync(arenaPlayer, capturedRoundType, result.Value));
+					_ = _databaseService.SaveRoundPreferenceAsync(arenaPlayer, capturedRoundType, result.Value);
 					var status = result.Value
 						? clickLocalizer["k4.chat.round_enabled"]
 						: clickLocalizer["k4.chat.round_disabled"];
-					e.Player.SendChat($"{clickLocalizer["k4.general.prefix"]} {clickLocalizer["k4.chat.round_toggled", clickLocalizer[capturedRoundType.Name], status]}");
+					await e.Player.SendChatAsync($"{clickLocalizer["k4.general.prefix"]} {clickLocalizer["k4.chat.round_toggled", clickLocalizer[capturedRoundType.Name], status]}");
 				}
 			};
 			menuBuilder.AddOption(toggle);
