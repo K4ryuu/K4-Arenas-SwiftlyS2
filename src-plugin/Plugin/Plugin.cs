@@ -696,6 +696,17 @@ public sealed partial class Plugin(ISwiftlyCore core) : BasePlugin(core)
 
 	#region Menu Methods
 
+	private void SendMenuChatNextWorldUpdate(IPlayer? player, string message)
+	{
+		Core.Scheduler.NextWorldUpdate(() =>
+		{
+			if (player?.IsValid == true)
+			{
+				player.SendChat(message);
+			}
+		});
+	}
+
 	private void ShowWeaponPreferencesMenu(ArenaPlayer arenaPlayer)
 	{
 		var localizer = Core.Translation.GetPlayerLocalizer(arenaPlayer.Player);
@@ -757,7 +768,9 @@ public sealed partial class Plugin(ISwiftlyCore core) : BasePlugin(core)
 			var clickLocalizer = Core.Translation.GetPlayerLocalizer(arenaPlayer.Player);
 			arenaPlayer.SetWeaponPreference(weaponType, null);
 			Task.Run(() => _databaseService.SaveWeaponPreferenceAsync(arenaPlayer, weaponType, null));
-			arenaPlayer.Player.SendChat($"{clickLocalizer["k4.general.prefix"]} {clickLocalizer["k4.chat.weapon_set_random", clickLocalizer[Weapons.GetTranslationKey(weaponType)]]}");
+			SendMenuChatNextWorldUpdate(
+				arenaPlayer.Player,
+				$"{clickLocalizer["k4.general.prefix"]} {clickLocalizer["k4.chat.weapon_set_random", clickLocalizer[Weapons.GetTranslationKey(weaponType)]]}");
 			// Refresh menu to update highlighting
 			ShowWeaponSelectionMenu(arenaPlayer, weaponType);
 			return ValueTask.CompletedTask;
@@ -786,7 +799,9 @@ public sealed partial class Plugin(ISwiftlyCore core) : BasePlugin(core)
 				var clickLocalizer = Core.Translation.GetPlayerLocalizer(arenaPlayer.Player);
 				arenaPlayer.SetWeaponPreference(weaponType, capturedWeapon);
 				Task.Run(() => _databaseService.SaveWeaponPreferenceAsync(arenaPlayer, weaponType, capturedWeapon));
-				arenaPlayer.Player.SendChat($"{clickLocalizer["k4.general.prefix"]} {clickLocalizer["k4.chat.weapon_set", capturedDisplayName]}");
+				SendMenuChatNextWorldUpdate(
+					arenaPlayer.Player,
+					$"{clickLocalizer["k4.general.prefix"]} {clickLocalizer["k4.chat.weapon_set", capturedDisplayName]}");
 				// Refresh menu to update highlighting
 				ShowWeaponSelectionMenu(arenaPlayer, weaponType);
 				return ValueTask.CompletedTask;
@@ -823,7 +838,9 @@ public sealed partial class Plugin(ISwiftlyCore core) : BasePlugin(core)
 				if (result == null)
 				{
 					// Can't disable the last one - revert the toggle
-					e.Player.SendChat($"{clickLocalizer["k4.general.prefix"]} {clickLocalizer["k4.chat.round_last_one"]}");
+					SendMenuChatNextWorldUpdate(
+						e.Player,
+						$"{clickLocalizer["k4.general.prefix"]} {clickLocalizer["k4.chat.round_last_one"]}");
 					// Refresh menu to reset toggle state
 					ShowRoundPreferencesMenu(arenaPlayer);
 				}
@@ -834,7 +851,9 @@ public sealed partial class Plugin(ISwiftlyCore core) : BasePlugin(core)
 					var status = result.Value
 						? clickLocalizer["k4.chat.round_enabled"]
 						: clickLocalizer["k4.chat.round_disabled"];
-					e.Player.SendChat($"{clickLocalizer["k4.general.prefix"]} {clickLocalizer["k4.chat.round_toggled", clickLocalizer[capturedRoundType.Name], status]}");
+					SendMenuChatNextWorldUpdate(
+						e.Player,
+						$"{clickLocalizer["k4.general.prefix"]} {clickLocalizer["k4.chat.round_toggled", clickLocalizer[capturedRoundType.Name], status]}");
 				}
 			};
 			menuBuilder.AddOption(toggle);
